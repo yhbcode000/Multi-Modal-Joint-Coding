@@ -15,15 +15,15 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 
-from dataloaders.kitti_loader import load_calib, oheight, owidth, input_options, KittiDepth
-from model import DepthCompletionFrontNet
+from dataloaders.completion_segmentation_loader_new_ import load_calib, oheight, owidth, input_options, KittiDepth
+from completion_segmentation_model import DepthCompletionFrontNet
 from metrics import AverageMeter, Result
 import criteria
-import helper
+import completion_segmentation_helper
 from inverse_warp import Intrinsics, homography_from
 
 import numpy as np
-# import plot # FIXME this code is never used.
+import plot
 
 parser = argparse.ArgumentParser(description='Sparse-to-Dense')
 parser.add_argument('-w',
@@ -72,7 +72,7 @@ parser.add_argument('--lr',
                     help='initial learning rate (default 1e-5)')
 parser.add_argument('--weight-decay',
                     '--wd',
-                    default=0.0005,
+                    default=0,
                     type=float,
                     metavar='W',
                     help='weight decay (default: 0)')
@@ -299,7 +299,7 @@ def iterate(mode, args, loader, model, optimizer, logger, best_acc, epoch):
         if mode == 'train':
             # 语义分割loss
             if epoch<20:
-                class_weight_l = torch.tensor([0.1, 0.9])
+                class_weight_l = torch.tensor([0.9, 0.1])
                 class_weight_r = torch.tensor([0.5, 0.5])
             else:
                 #for lane weight
@@ -377,11 +377,7 @@ def iterate(mode, args, loader, model, optimizer, logger, best_acc, epoch):
             logger.conditional_save_pred(mode, i, pred, epoch)
         nonsense += (time.clock()-start_)
 
-    val_time = time.clock()-start_val-nonsense
-    print('total cost time: ', val_time)
-    if mode=='val':
-        with open('time.txt','a+') as f:
-            f.write(str(val_time)+'\n')
+    print('total cost time: ', time.clock()-start_val-nonsense)
     if mode=='train':
         lane_loss_mean = np.array(lane_loss_lst).mean()
         lane_acc_mean = np.array(lane_acc_lst).mean()
@@ -522,20 +518,8 @@ def main():
     
     for epoch in range(args.start_epoch, args.epochs):
         print("=> starting training epoch {} ..".format(epoch))
-        start = time.clock()
-        _, _, train_road_loss, train_lane_loss, train_road_acc, train_lane_acc, train_total_road_acc, train_total_lane_acc, train_overall_acc = \
-                iterate("train", args, train_loader, model, optimizer, logger, best_acc, epoch)  # train for one epoch
-        print('using training time: ', time.clock()-start)
         
-        train_road_loss_list.append(train_road_loss)
-        train_lane_loss_list.append(train_lane_loss)
-        train_road_acc_list.append(train_road_acc)
-        train_lane_acc_list.append(train_lane_acc)
-        train_total_road_acc_list.append(train_road_acc)
-        train_total_lane_acc_list.append(train_lane_acc)
-        train_overall_acc_list.append(train_overall_acc)
-        
-        if (epoch%5==0):
+        if True:
             result, is_best, val_road_acc, val_lane_acc, val_total_road_acc, val_total_lane_acc, val_overall_acc = \
                     iterate("val", args, val_loader, model, None, logger, best_acc, epoch)  # evaluate on validation set
         
@@ -554,42 +538,19 @@ def main():
             }, is_best, epoch, logger.output_directory)
     
 
-
-        with open('log/train_road_loss_v6_'+'.txt', 'a+') as f:
-            train_road_loss_list_w = [str(line) for line in train_road_loss_list]
-            f.writelines('\n'.join(train_road_loss_list_w))
-        with open('log/train_lane_loss_v6_'+'.txt', 'a+') as f:
-            train_lane_loss_list_w = [str(line) for line in train_lane_loss_list]
-            f.writelines('\n'.join(train_lane_loss_list_w))
-        with open('log/train_road_acc_v6_'+'.txt', 'a+') as f:
-            train_road_acc_list_w = [str(line) for line in train_road_acc_list]
-            f.writelines('\n'.join(train_road_acc_list_w))
-        with open('log/train_lane_acc_v6_'+'.txt', 'a+') as f:
-            train_lane_acc_list_w = [str(line) for line in train_lane_acc_list]
-            f.writelines('\n'.join(train_lane_acc_list_w))
-        with open('log/train_total_road_acc_v6_'+'.txt', 'a+') as f:
-            train_total_road_acc_list_w = [str(line) for line in train_total_road_acc_list]        
-            f.writelines('\n'.join(train_total_road_acc_list_w))
-        with open('log/train_total_lane_acc_v6_'+'.txt', 'a+') as f:
-            train_total_lane_acc_list_w = [str(line) for line in train_total_lane_acc_list]
-            f.writelines('\n'.join(train_total_lane_acc_list_w))
-        with open('log/train_overall_acc_v6_'+'.txt', 'a+') as f:
-            train_overall_acc_list_w = [str(line) for line in train_overall_acc_list]
-            f.writelines('\n'.join(train_overall_acc_list_w))
-
-        with open('log/val_road_acc_v6_'+'.txt', 'a+') as f:
+        with open('log/val_road_acc_v6_'+time.strftime('%Y-%m-%d-%H:%M:%S',time.localtime(time.time()))+'.txt', 'w+') as f:
             val_road_acc_list_w = [str(line) for line in val_road_acc_list]
             f.writelines('\n'.join(val_road_acc_list_w))
-        with open('log/val_lane_acc_v6_'+'.txt', 'a+') as f:
+        with open('log/val_lane_acc_v6_'+time.strftime('%Y-%m-%d-%H:%M:%S',time.localtime(time.time()))+'.txt', 'w+') as f:
             val_lane_acc_list_w = [str(line) for line in val_lane_acc_list]
             f.writelines('\n'.join(val_lane_acc_list_w))
-        with open('log/val_total_road_acc_v6_'+'.txt', 'a+') as f:    
+        with open('log/val_total_road_acc_v6_'+time.strftime('%Y-%m-%d-%H:%M:%S',time.localtime(time.time()))+'.txt', 'w+') as f:
             val_total_road_acc_list_w = [str(line) for line in val_total_road_acc_list]
             f.writelines('\n'.join(val_total_road_acc_list_w))
-        with open('log/val_total_lane_acc_v6_'+'.txt', 'a+') as f:
+        with open('log/val_total_lane_acc_v6_'+time.strftime('%Y-%m-%d-%H:%M:%S',time.localtime(time.time()))+'.txt', 'w+') as f:
             val_total_lane_acc_list_w = [str(line) for line in val_total_lane_acc_list]
             f.writelines('\n'.join(val_total_lane_acc_list_w))
-        with open('log/val_overall_acc_v6_'+'.txt', 'a+') as f:
+        with open('log/val_overall_acc_v6_'+time.strftime('%Y-%m-%d-%H:%M:%S',time.localtime(time.time()))+'.txt', 'w+') as f:
             val_overall_acc_list_w = [str(line) for line in val_overall_acc_list]
             f.writelines('\n'.join(val_overall_acc_list_w))
 

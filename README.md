@@ -1,98 +1,37 @@
-# self-supervised-depth-completion
+# A novel multimodal fusion network based on a joint coding model for lane line segmentation.
 
-This repo is the PyTorch implementation of our ICRA'19 paper on ["Self-supervised Sparse-to-Dense:  Self-supervised Depth Completion from LiDAR and Monocular Camera"](https://arxiv.org/pdf/1807.00275.pdf), developed by [Fangchang Ma](http://www.mit.edu/~fcma/), Guilherme Venturelli Cavalheiro, and [Sertac Karaman](http://karaman.mit.edu/) at MIT. A video demonstration is available on [YouTube](https://youtu.be/bGXfvF261pc).
+## Abstract
 
-<p align="center">
-	<img src="https://j.gifs.com/rRrOW4.gif" alt="photo not available" height="50%">
-</p>
+There has recently been growing interest in utilizing multimodal sensors to achieve robust lane line segmentation. In this paper, we introduce a novel multimodal fusion architecture from an information theory perspective, and demonstrate its practical utility using Light Detection and Ranging (LiDAR) camera fusion networks. In particular, we develop, for the first time, a multimodal fusion network as a joint coding model, where each single node, layer, and pipeline is represented as a channel. The forward propagation is thus equal to the information transmission in the channels. Then, we can qualitatively and quantitatively analyze the effect of different fusion approaches. We argue the optimal fusion architecture is related to the essential capacity and its allocation based on the source and channel. To test this multimodal fusion hypothesis, we progressively determine a series of multimodal models based on the proposed fusion methods and evaluate them on the KITTI and the A2D2 datasets. Our optimal fusion network achieves 85\%+ lane line accuracy and 98.7\%+ overall. The performance gap among the models will inform continuing future research into development of optimal fusion algorithms for the deep multimodal learning community.
 
-Our network is trained with the KITTI dataset alone, without pretraining on Cityscapes or other similar driving dataset (either synthetic or real). The use of additional data is likely to further improve the accuracy.
+## Code base
 
-Please create a new issue for code-related questions. 
+The whole project is developed based on prject: self-supervised-depth-completion, details can be found in file: [README_base.md](README_base.md).
 
-## Contents
-1. [Dependency](#dependency)
-0. [Data](#data)
-0. [Trained Models](#trained-models)
-0. [Commands](#commands)
-0. [Citation](#citation)
+## Project entry points
 
-
-## Dependency
-This code was tested with Python 3 and PyTorch 1.0 on Ubuntu 16.04.
-```bash
-pip install numpy matplotlib Pillow
-pip install torch torchvision # pytorch
-
-# for self-supervised training requires opencv, along with the contrib modules
-pip install opencv-contrib-python==3.4.2.16
-```
-
-## Data
-- Download the [KITTI Depth](http://www.cvlibs.net/datasets/kitti/eval_depth.php?benchmark=depth_completion) Dataset from their website. Use the following scripts to extract corresponding RGB images from the raw dataset. 
-```bash
-./download/rgb_train_downloader.sh
-./download/rgb_val_downloader.sh
-```
-The downloaded rgb files will be stored in the `../data/data_rgb` folder. The overall code, data, and results directory is structured as follows (updated on Oct 1, 2019)
-```
-.
-├── self-supervised-depth-completion
-├── data
-|   ├── data_depth_annotated
-|   |   ├── train
-|   |   ├── val
-|   ├── data_depth_velodyne
-|   |   ├── train
-|   |   ├── val
-|   ├── depth_selection
-|   |   ├── test_depth_completion_anonymous
-|   |   ├── test_depth_prediction_anonymous
-|   |   ├── val_selection_cropped
-|   └── data_rgb
-|   |   ├── train
-|   |   ├── val
-├── results
-```
-
-## Trained Models
-Download our trained models at http://datasets.lids.mit.edu/self-supervised-depth-completion to a folder of your choice.
-- supervised training (i.e., models trained with semi-dense lidar ground truth): http://datasets.lids.mit.edu/self-supervised-depth-completion/supervised/
-- self-supervised (i.e., photometric loss + sparse depth loss + smoothness loss): http://datasets.lids.mit.edu/self-supervised-depth-completion/self-supervised/
-
-## Commands
-A complete list of training options is available with 
-```bash
-python main.py -h
-```
-For instance,
-```bash
-# train with the KITTI semi-dense annotations, rgbd input, and batch size 1
-python main.py --train-mode dense -b 1 --input rgbd
-
-# train with the self-supervised framework, not using ground truth
-python main.py --train-mode sparse+photo 
-
-# resume previous training
-python main.py --resume [checkpoint-path] 
-
-# test the trained model on the val_selection_cropped data
-python main.py --evaluate [checkpoint-path] --val select
-```
+- code_base_entry_point: [main.py](code_base/main.py)
+- c0de_v6_entry_point: [main.py](main.py)
 
 ## Citation
-If you use our code or method in your work, please cite the following:
 
-	@article{ma2018self,
-		title={Self-supervised Sparse-to-Dense: Self-supervised Depth Completion from LiDAR and Monocular Camera},
-		author={Ma, Fangchang and Cavalheiro, Guilherme Venturelli and Karaman, Sertac},
-		booktitle={ICRA},
-		year={2019}
-	}
-	@article{Ma2017SparseToDense,
-		title={Sparse-to-Dense: Depth Prediction from Sparse Depth Samples and a Single Image},
-		author={Ma, Fangchang and Karaman, Sertac},
-		booktitle={ICRA},
-		year={2018}
-	}
+```
 
+@article{Zou2022,
+	title = {A novel multimodal fusion network based on a joint coding model for lane line segmentation},
+	volume = {80},
+	issn = {15662535},
+	url = {https://linkinghub.elsevier.com/retrieve/pii/S1566253521002153},
+	doi = {10.1016/j.inffus.2021.10.008},
+	journal = {Information Fusion},
+	author = {Zou, Zhenhong and Zhang, Xinyu and Liu, Huaping and Li, Zhiwei and Hussain, Amir and Li, Jun},
+	month = apr,
+	year = {2022},
+	note = {arXiv: 2103.11114
+Publisher: Elsevier B.V.},
+	keywords = {yangsir like, Information theory, Lane line segmentation, Multimodal fusion, Neural Network, Semantic segmentation},
+	pages = {167--178},
+	file = {Submitted Version:C\:\\Users\\Administrator\\Zotero\\storage\\T24BXLJY\\Zou et al. - 2022 - A novel multimodal fusion network based on a joint.pdf:application/pdf},
+}
+
+```
