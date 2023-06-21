@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 31 11:08:59 2020
+
+@author: kerui
+"""
+
 import math
 import os, time
 import shutil
@@ -72,6 +79,12 @@ class logger:
                         average=avg,
                         split=split.capitalize()))
             blk_avg_meter.reset()
+            
+    def test_print(self, split, i, n_set):
+        print('=> output: {}'.format(self.output_directory))
+        print(
+            '{} [{}/{}]\t'.format(split.capitalize(), i+1, n_set)
+            )
 
     def conditional_save_info(self, split, average_meter, epoch):
         avg = average_meter.average()
@@ -167,18 +180,41 @@ class logger:
             self.save_best_txt(result, epoch)
         return is_best
 
+    # save pred as image
     def conditional_save_pred(self, mode, i, pred, epoch):
         #if ("test" in mode or mode == "eval") and self.args.save_pred:
-        if ("test" in mode or mode == "val"): #and self.args.save_pred: # 我加的，2020/02/26
-
-            # save images for visualization/ testing
-            image_folder = os.path.join(self.output_directory,
-                                        mode)
-            if not os.path.exists(image_folder):
-                os.makedirs(image_folder)
-            img = torch.squeeze(pred.data.cpu()).numpy()
-            filename = os.path.join(image_folder, '{0:010d}.png'.format(i))
-            vis_utils.save_depth_as_uint16png(img, filename)
+        if ("test" in mode or mode == "val"): #and self.args.save_pred: 
+            # save completion images for visualization/ testing
+            road_image_folder = os.path.join(self.output_directory,
+                                        mode+'_road_segmentation')
+            if not os.path.exists(road_image_folder):
+                os.makedirs(road_image_folder)
+            
+            # save segmentation images
+            lane_image_folder = os.path.join(self.output_directory,
+                                        mode+'_lane_segmentation')
+            if not os.path.exists(lane_image_folder):
+                os.makedirs(lane_image_folder)
+            
+            # pred to numpy.array
+            def pred2array(pred):
+                bs, c, h, w = pred.size()
+                values, indices = pred.max(1)
+                indices = indices.view(h,w).numpy()
+                return indices
+            
+            #img = torch.squeeze(pred[1].data.cpu()).numpy()
+            img = pred2array(pred[1].data.cpu())
+            filename = os.path.join(road_image_folder, '{0:010d}.png'.format(i))
+            vis_utils.save_segmentation(img, filename)
+            
+            img = pred2array(pred[0].data.cpu())
+            filename = os.path.join(lane_image_folder, '{0:010d}.png'.format(i))
+            vis_utils.save_segmentation(img, filename)
+            
+            
+            
+            
 
     def conditional_summarize(self, mode, avg, is_best):
         print("\n*\nSummary of ", mode, "round")
@@ -215,10 +251,17 @@ def backup_source_code(backup_directory):
     #shutil.copytree('.', backup_directory, ignore=ignore_hidden)
 
 
+#def adjust_learning_rate(lr_init, optimizer, epoch):
+#    """Sets the learning rate to the initial LR decayed by 10 every 5 epochs"""
+#    lr = lr_init * (0.1**(epoch // 5))
+#    for param_group in optimizer.param_groups:
+#        param_group['lr'] = lr
+#    return lr
+
 def adjust_learning_rate(lr_init, optimizer, epoch):
     """Sets the learning rate to the initial LR decayed by 10 every 5 epochs"""
     lr = lr_init * (0.8**(epoch // 10))
-    lr = lr * (2**(epoch//50))
+    lr = lr * (2**(epoch // 50))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return lr

@@ -218,7 +218,7 @@ def main():
     global args
     checkpoint = None
     #is_eval = False
-    is_eval = True  # 我加的，用来测试，2020/02/26
+    is_eval = True  # FIXME 我加的，用来测试，2020/02/26
     if args.evaluate:
         args_new = args
         if os.path.isfile(args.evaluate):
