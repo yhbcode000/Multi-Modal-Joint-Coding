@@ -176,11 +176,11 @@ for i in ${files[@]}; do
   echo "Downloading: "$shortname
 
   wget 's3.eu-central-1.amazonaws.com/avg-kitti/raw_data/'$fullname
-  unzip -o $shortname
-  mv $datadate'/'$i'_sync' $basedir$i'_sync'
-  rmdir $datadate
-  rm -rf $basedir$i'_sync/image_00' $basedir$i'_sync/image_01' $basedir$i'_sync/velodyne_points' $basedir$i'_sync/oxts'
-  rm $shortname # remove zip file
+  # unzip -o $shortname
+  # mv $datadate'/'$i'_sync' $basedir$i'_sync'
+  # rmdir $datadate
+  # rm -rf $basedir$i'_sync/image_00' $basedir$i'_sync/image_01' $basedir$i'_sync/velodyne_points' $basedir$i'_sync/oxts'
+  # rm $shortname # remove zip file
 done
 
 

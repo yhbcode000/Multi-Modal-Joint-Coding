@@ -98,7 +98,7 @@ def get_paths_and_transform(split, args):
             
                 pnew = os.path.join(rgb_path, ps[-1])
             
-            #print('-------------------1-------------------\n')
+            #print('-------------------1-------------------\n')/home/yanghaobo/Env/Informatics_Fusion/data/det_annotations
                 return pnew
             
             
