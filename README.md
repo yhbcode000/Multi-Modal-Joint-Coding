@@ -8,11 +8,6 @@ There has recently been growing interest in utilizing multimodal sensors to achi
 
 The whole project is developed based on prject: self-supervised-depth-completion, details can be found in file: [README_base.md](README_base.md).
 
-## Project entry points
-
-- code_base_entry_point: [main.py](code_base/main.py)
-- c0de_v6_entry_point: [main.py](main.py)
-
 ## Citation
 
 ```

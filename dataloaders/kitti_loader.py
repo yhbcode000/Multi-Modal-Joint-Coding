@@ -55,18 +55,30 @@ def get_paths_and_transform(split, args):
             #'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
             'data_depth_annotated/train/2011_09_26_drive_0001_sync/proj_depth/groundtruth/image_02/*.png'
         )
+        
+        # TODO code refactor
 
         def get_rgb_paths(p):
-            rgb_path = '../data/data_rgb/train/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/image_02/data/'
-            
-            ps = p.split('\\')
-#            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
-#                            ps[-2:-1] + ['data'] + ps[-1:])
-            
-            pnew = os.path.join(rgb_path, ps[-1])
-            
-            #print('-------------------1-------------------\n')
+            ps = p.split('/')
+            pnew = '/'.join(ps[:-7] +  
+                ['data_rgb']+ps[-6:-4]+ps[-2:-1]+['data']+ps[-1:])
+                
+            # print('-------------------2-------------------\n')
             return pnew
+        
+        
+#         def get_rgb_paths(p):
+#             rgb_path = '../data/data_rgb/train/2011_09_26_drive_0001_sync/image_02/data/'
+        
+# #                 ps = p.split('\\')
+# # #            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
+# # #                            ps[-2:-1] + ['data'] + ps[-1:])
+        
+# #                 pnew = os.path.join(rgb_path, ps[-1])
+        
+# #             #print('-------------------1-------------------\n')/home/yanghaobo/Env/Informatics_Fusion/data/det_annotations
+#             return rgb_path
+        
     elif split == "val":
         if args.val == "full":
             transform = val_transform
@@ -80,26 +92,27 @@ def get_paths_and_transform(split, args):
                 #'data_depth_annotated/val/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
                 'data_depth_annotated/train/2011_09_26_drive_0001_sync/proj_depth/groundtruth/image_02/*.png'
             )
-#            def get_rgb_paths(p):
-#                ps = p.split('/')
-#                pnew = '/'.join(ps[:-7] +  
-#                    ['data_rgb']+ps[-6:-4]+ps[-2:-1]+['data']+ps[-1:])
-#                
-#               # print('-------------------2-------------------\n')
-#                return pnew
-            
             
             def get_rgb_paths(p):
-                rgb_path = '../data/data_rgb/train/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/image_02/data/'
-            
-                ps = p.split('\\')
-#            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
-#                            ps[-2:-1] + ['data'] + ps[-1:])
-            
-                pnew = os.path.join(rgb_path, ps[-1])
-            
-            #print('-------------------1-------------------\n')/home/yanghaobo/Env/Informatics_Fusion/data/det_annotations
+                ps = p.split('/')
+                pnew = '/'.join(ps[:-7] +  
+                    ['data_rgb']+ps[-6:-4]+ps[-2:-1]+['data']+ps[-1:])
+                
+                # print('-------------------2-------------------\n')
                 return pnew
+            
+            
+#             def get_rgb_paths(p):
+#                 rgb_path = '../data/data_rgb/train/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/image_02/data/'
+            
+# #                 ps = p.split('\\')
+# # #            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
+# # #                            ps[-2:-1] + ['data'] + ps[-1:])
+            
+# #                 pnew = os.path.join(rgb_path, ps[-1])
+            
+# #             #print('-------------------1-------------------\n')/home/yanghaobo/Env/Informatics_Fusion/data/det_annotations
+#                 return rgb_path
             
             
         elif args.val == "select":

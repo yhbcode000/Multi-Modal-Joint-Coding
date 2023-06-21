@@ -88,7 +88,7 @@ parser.add_argument('--resume',
                     metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('--data-folder',
-                    default='../data',
+                    default='data',
                     type=str,
                     metavar='PATH',
                     help='data folder (default: none)')
@@ -256,7 +256,7 @@ def iterate(mode, args, loader, model, optimizer, logger, best_acc, epoch):
         "unsupported mode: {}".format(mode)
     if mode == 'train':
         model.train()
-        lr = completion_segmentation_helper.adjust_learning_rate(args.lr, optimizer, epoch)
+        lr = helper.adjust_learning_rate(args.lr, optimizer, epoch)
     else:
         model.eval()
         lr = 0
@@ -489,7 +489,7 @@ def main():
     print("\t==> val_loader size:{}".format(len(val_loader)))
 
     # create backups and results folder
-    logger = completion_segmentation_helper.logger(args)
+    logger = helper.logger(args)
     if checkpoint is not None:
         logger.best_result = checkpoint['best_result']
     print("=> logger created.")
@@ -545,7 +545,7 @@ def main():
             val_total_lane_acc_list.append(val_lane_acc)
             val_overall_acc_list.append(val_overall_acc)
         
-            completion_segmentation_helper.save_checkpoint({ # save checkpoint
+            helper.save_checkpoint({ # save checkpoint
                 'epoch': epoch,
                 'model': model.module.state_dict(),
                 'best_result': result,
