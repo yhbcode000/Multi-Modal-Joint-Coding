@@ -3,8 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet
+import cv2
 
 
+# 初始化参数
 def init_weights(m):
     if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
         m.weight.data.normal_(0, 1e-3)
@@ -18,6 +20,7 @@ def init_weights(m):
         m.weight.data.fill_(1)
         m.bias.data.zero_()
 
+# 卷积-> 批标准化-> relu
 def conv_bn_relu(in_channels, out_channels, kernel_size, \
         stride=1, padding=0, bn=True, relu=True):
     bias = not bn
@@ -41,6 +44,7 @@ def conv_bn_relu(in_channels, out_channels, kernel_size, \
 
     return layers
 
+# 转置卷积-> 批标准化-> relu
 def convt_bn_relu(in_channels, out_channels, kernel_size, \
         stride=1, padding=0, output_padding=0, bn=True, relu=True):
     bias = not bn
@@ -65,16 +69,17 @@ def convt_bn_relu(in_channels, out_channels, kernel_size, \
 
     return layers
 
-
+# 模型
 class DepthCompletionNet(nn.Module):
     def __init__(self, args):
         assert (
             args.layers in [18, 34, 50, 101, 152]
         ), 'Only layers 18, 34, 50, 101, and 152 are defined, but got {}'.format(
-            layers)
+            args.layers)
         super(DepthCompletionNet, self).__init__()
         self.modality = args.input
 
+        # depth
         if 'd' in self.modality:
             channels = 64 // len(self.modality)
             self.conv1_d = conv_bn_relu(1,
@@ -82,6 +87,8 @@ class DepthCompletionNet(nn.Module):
                                         kernel_size=3,
                                         stride=1,
                                         padding=1)
+            
+        # rgb
         if 'rgb' in self.modality:
             channels = 64 * 3 // len(self.modality)
             self.conv1_img = conv_bn_relu(3,
@@ -89,6 +96,8 @@ class DepthCompletionNet(nn.Module):
                                           kernel_size=3,
                                           stride=1,
                                           padding=1)
+            
+        # gray
         elif 'g' in self.modality:
             channels = 64 // len(self.modality)
             self.conv1_img = conv_bn_relu(1,
@@ -97,14 +106,22 @@ class DepthCompletionNet(nn.Module):
                                           stride=1,
                                           padding=1)
 
+        # 加载resnet预训练模型
         pretrained_model = resnet.__dict__['resnet{}'.format(
             args.layers)](pretrained=args.pretrained)
         if not args.pretrained:
             pretrained_model.apply(init_weights)
+            
+        # encoding layers
+        
         #self.maxpool = pretrained_model._modules['maxpool']
+        # resnet预训练模型的第一个块
         self.conv2 = pretrained_model._modules['layer1']
+        # resnet预训练模型的第二个块
         self.conv3 = pretrained_model._modules['layer2']
+        # resnet预训练模型的第三个块
         self.conv4 = pretrained_model._modules['layer3']
+        # resnet预训练模型的第四个块
         self.conv5 = pretrained_model._modules['layer4']
         del pretrained_model  # clear memory
 
@@ -113,13 +130,14 @@ class DepthCompletionNet(nn.Module):
             num_channels = 512
         elif args.layers >= 50:
             num_channels = 2048
+            
         self.conv6 = conv_bn_relu(num_channels,
                                   512,
                                   kernel_size=3,
                                   stride=2,
                                   padding=1)
 
-        # decoding layers
+        # decoding layers for reflectance completion
         kernel_size = 3
         stride = 2
         self.convt5 = convt_bn_relu(in_channels=512,
@@ -157,6 +175,7 @@ class DepthCompletionNet(nn.Module):
                                    stride=1,
                                    bn=False,
                                    relu=False)
+        
 
     def forward(self, x):
         # first layer
@@ -168,17 +187,19 @@ class DepthCompletionNet(nn.Module):
             conv1_img = self.conv1_img(x['g'])
 
         if self.modality == 'rgbd' or self.modality == 'gd':
+            #conv1_img = transform                                # 我加的，2020/03/03/下午
             conv1 = torch.cat((conv1_d, conv1_img), 1)
         else:
             conv1 = conv1_d if (self.modality == 'd') else conv1_img
 
+        # encoder
         conv2 = self.conv2(conv1)
         conv3 = self.conv3(conv2)  # batchsize * ? * 176 * 608
         conv4 = self.conv4(conv3)  # batchsize * ? * 88 * 304
         conv5 = self.conv5(conv4)  # batchsize * ? * 44 * 152
         conv6 = self.conv6(conv5)  # batchsize * ? * 22 * 76
 
-        # decoder
+        # decoder for reflectance completion
         convt5 = self.convt5(conv6)
         y = torch.cat((convt5, conv5), 1)
 
@@ -194,6 +215,7 @@ class DepthCompletionNet(nn.Module):
         convt1 = self.convt1(y)
         y = torch.cat((convt1, conv1), 1)
 
+        # reflectance completion
         y = self.convtf(y)
 
         if self.training:

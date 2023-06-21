@@ -69,6 +69,9 @@ class Result(object):
         output_mm = 1e3 * output[valid_mask]
         target_mm = 1e3 * target[valid_mask]
 
+        #abs_diff = (output_mm - target_mm).abs()
+        output_mm = output_mm.cuda()
+        target_mm = target_mm.cuda()
         abs_diff = (output_mm - target_mm).abs()
 
         self.mse = float((torch.pow(abs_diff, 2)).mean())
