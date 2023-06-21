@@ -47,90 +47,45 @@ def get_paths_and_transform(split, args):
         transform = train_transform
         glob_d = os.path.join(
             args.data_folder,
-            #'data_depth_velodyne/train/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
-            'data_depth_velodyne/train/2011_09_26_drive_0001_sync/proj_depth/velodyne_raw/image_02/*.png'
+            'data_depth_velodyne/train/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
         )
         glob_gt = os.path.join(
             args.data_folder,
-            #'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
-            'data_depth_annotated/train/2011_09_26_drive_0001_sync/proj_depth/groundtruth/image_02/*.png'
+            'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
         )
 
         def get_rgb_paths(p):
-            rgb_path = '../data/data_rgb/train/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/image_02/data/'
-            
-            ps = p.split('\\')
-#            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
-#                            ps[-2:-1] + ['data'] + ps[-1:])
-            
-            pnew = os.path.join(rgb_path, ps[-1])
-            
-            #print('-------------------1-------------------\n')
+            ps = p.split('/')
+            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
+                            ps[-2:-1] + ['data'] + ps[-1:])
             return pnew
     elif split == "val":
         if args.val == "full":
             transform = val_transform
             glob_d = os.path.join(
                 args.data_folder,
-                #'data_depth_velodyne/val/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
-                'data_depth_velodyne/train/2011_09_26_drive_0001_sync/proj_depth/velodyne_raw/image_02/*.png'
+                'data_depth_velodyne/val/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
             )
             glob_gt = os.path.join(
                 args.data_folder,
-                #'data_depth_annotated/val/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
-                'data_depth_annotated/train/2011_09_26_drive_0001_sync/proj_depth/groundtruth/image_02/*.png'
+                'data_depth_annotated/val/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
             )
-#            def get_rgb_paths(p):
-#                ps = p.split('/')
-#                pnew = '/'.join(ps[:-7] +  
-#                    ['data_rgb']+ps[-6:-4]+ps[-2:-1]+['data']+ps[-1:])
-#                
-#               # print('-------------------2-------------------\n')
-#                return pnew
-            
-            
             def get_rgb_paths(p):
-                rgb_path = '../data/data_rgb/train/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/image_02/data/'
-            
-                ps = p.split('\\')
-#            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
-#                            ps[-2:-1] + ['data'] + ps[-1:])
-            
-                pnew = os.path.join(rgb_path, ps[-1])
-            
-            #print('-------------------1-------------------\n')/home/yanghaobo/Env/Informatics_Fusion/data/det_annotations
+                ps = p.split('/')
+                pnew = '/'.join(ps[:-7] +  
+                    ['data_rgb']+ps[-6:-4]+ps[-2:-1]+['data']+ps[-1:])
                 return pnew
-            
-            
         elif args.val == "select":
             transform = no_transform
             glob_d = os.path.join(
                 args.data_folder,
-                #"depth_selection/val_selection_cropped/velodyne_raw/*.png"
-                'data_depth_velodyne/train/2011_09_26_drive_0001_sync/proj_depth/velodyne_raw/image_02/*.png'
-                )
+                "depth_selection/val_selection_cropped/velodyne_raw/*.png")
             glob_gt = os.path.join(
                 args.data_folder,
-                #"depth_selection/val_selection_cropped/groundtruth_depth/*.png"
-                'data_depth_annotated/train/2011_09_26_drive_0001_sync/proj_depth/groundtruth/image_02/*.png'
+                "depth_selection/val_selection_cropped/groundtruth_depth/*.png"
             )
-#            def get_rgb_paths(p):
-#                #print('-------------------3-------------------\n')
-#                return p.replace("groundtruth_depth","image")
-            
-            
-            
             def get_rgb_paths(p):
-                rgb_path = '../data/data_rgb/train/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/image_02/data/'
-            
-                ps = p.split('\\')
-#            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
-#                            ps[-2:-1] + ['data'] + ps[-1:])
-            
-                pnew = os.path.join(rgb_path, ps[-1])
-            
-            #print('-------------------1-------------------\n')
-                return pnew
+                return p.replace("groundtruth_depth","image")
     elif split == "test_completion":
         transform = no_transform
         glob_d = os.path.join(
@@ -184,9 +139,6 @@ def get_paths_and_transform(split, args):
 def rgb_read(filename):
     assert os.path.exists(filename), "file not found: {}".format(filename)
     img_file = Image.open(filename)
-    
-    img_file = img_file.resize((240, 416))
-    
     # rgb_png = np.array(img_file, dtype=float) / 255.0 # scale pixels to the range [0,1]
     rgb_png = np.array(img_file, dtype='uint8')  # in the range [0,255]
     img_file.close()
@@ -199,9 +151,6 @@ def depth_read(filename):
     # for details see readme.txt
     assert os.path.exists(filename), "file not found: {}".format(filename)
     img_file = Image.open(filename)
-    
-    img_file = img_file.resize((240, 416))
-    
     depth_png = np.array(img_file, dtype=int)
     img_file.close()
     # make sure we have a proper 16bit depth map here.. not 8bit!
@@ -320,7 +269,8 @@ def get_rgb_near(path, args):
         if os.path.exists(path_near):
             break
         assert count < 20, "cannot find a nearby frame in 20 trials for {}".format(
-            path_rgb_tgt)
+            path)
+        count += 1
 
     return rgb_read(path_near)
 

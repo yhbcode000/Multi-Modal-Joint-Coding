@@ -34,7 +34,7 @@ class logger:
             print("=> creating source code backup ...")
             backup_directory = os.path.join(output_directory, "code_backup")
             self.backup_directory = backup_directory
-            backup_source_code(backup_directory)  # 我该的，由于出错（shutil.Error），注释了
+            backup_source_code(backup_directory)
             # create new csv files with only header
             with open(self.train_csv, 'w') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -168,12 +168,11 @@ class logger:
         return is_best
 
     def conditional_save_pred(self, mode, i, pred, epoch):
-        #if ("test" in mode or mode == "eval") and self.args.save_pred:
-        if ("test" in mode or mode == "val"): #and self.args.save_pred: # 我加的，2020/02/26
+        if ("test" in mode or mode == "eval") and self.args.save_pred:
 
             # save images for visualization/ testing
             image_folder = os.path.join(self.output_directory,
-                                        mode)
+                                        mode + "_output")
             if not os.path.exists(image_folder):
                 os.makedirs(image_folder)
             img = torch.squeeze(pred.data.cpu()).numpy()
@@ -212,13 +211,12 @@ ignore_hidden = shutil.ignore_patterns(".", "..", ".git*", "*pycache*",
 def backup_source_code(backup_directory):
     if os.path.exists(backup_directory):
         shutil.rmtree(backup_directory)
-    #shutil.copytree('.', backup_directory, ignore=ignore_hidden)
+    shutil.copytree('.', backup_directory, ignore=ignore_hidden)
 
 
 def adjust_learning_rate(lr_init, optimizer, epoch):
     """Sets the learning rate to the initial LR decayed by 10 every 5 epochs"""
-    lr = lr_init * (0.8**(epoch // 10))
-    lr = lr * (2**(epoch//50))
+    lr = lr_init * (0.1**(epoch // 5))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return lr

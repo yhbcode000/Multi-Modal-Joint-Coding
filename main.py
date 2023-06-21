@@ -174,14 +174,7 @@ def iterate(mode, args, loader, model, optimizer, logger, epoch):
         data_time = time.time() - start
 
         start = time.time()
-        
-        # 2020/03/27
-        
-        if mode == 'val':
-            with torch.no_grad(): # 自己加的, 设置torch.no_grad()，在val时不计算梯度，可以节省显存
-                pred = model(batch_data)
-        else:
-            pred = model(batch_data)
+        pred = model(batch_data)
         depth_loss, photometric_loss, smooth_loss, mask = 0, 0, 0, None
         if mode == 'train':
             # Loss 1: the direct depth supervision from ground truth label
@@ -294,7 +287,6 @@ def main():
 
     print("=> creating model and optimizer ... ", end='')
     model = DepthCompletionNet(args).to(device)
-    model = model.to("cpu")
     model_named_params = [
         p for _, p in model.named_parameters() if p.requires_grad
     ]

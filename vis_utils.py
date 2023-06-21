@@ -49,13 +49,6 @@ def save_image(img_merge, filename):
     image_to_write = cv2.cvtColor(img_merge, cv2.COLOR_RGB2BGR)
     cv2.imwrite(filename, image_to_write)
 
-# save segmentation image
-def save_segmentation(img, filename):
-    #image_to_write = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-    
-    # 将预测类别为1的像素转为白色；预测类别为0的保持不变，为黑色。
-    img[img == 1] = 255
-    cv2.imwrite(filename, img)
 
 def save_depth_as_uint16png(img, filename):
     img = (img * 256).astype('uint16')
