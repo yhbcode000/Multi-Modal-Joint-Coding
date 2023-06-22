@@ -8,10 +8,40 @@ There has recently been growing interest in utilizing multimodal sensors to achi
 
 The whole project is developed based on prject: self-supervised-depth-completion, details can be found in file: [README_base.md](README_base.md).
 
-## Project entry points
+> Notice: Dataset is different from the code base, with a smaller database, for lane line segmentation task.
 
-- code_base_entry_point: [main.py](code_base/main.py)
-- c0de_v6_entry_point: [main.py](main.py)
+## Dataset
+
+> TODO we have already have KITTI raw, and the following tasks may change.
+
+1. Download KITTI road dataset: data_road, data_road_right(TODO may not need), data_road_velodyne(TODO may not need).
+2. Unzip to data folder.
+3. Run [./dataprocessors/convert_gt_2_label.py](./dataprocessors/convert_gt_2_label.py) to generate data label.
+4. The data structure is shown below.
+
+```
+data
+|-- data_road
+|   |-- testing
+|   |   |-- calib
+|   |   `-- image_2
+|   `-- training
+|       |-- calib
+|       |-- gt_image_2
+|       |-- image_2
+|       |-- label_lane_image_2
+|       `-- label_road_image_2
+|-- data_road_right
+|   |-- testing
+|   |   `-- image_3
+|   `-- training
+|       `-- image_3
+`-- data_road_velodyne
+    |-- testing
+    |   `-- velodyne
+    `-- training
+        `-- velodyne
+```
 
 ## Citation
 
