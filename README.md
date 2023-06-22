@@ -8,6 +8,12 @@ There has recently been growing interest in utilizing multimodal sensors to achi
 
 The whole project is developed based on prject: self-supervised-depth-completion, details can be found in file: [README_base.md](README_base.md).
 
+> Notice: Dataset is different from the code base, with a smaller database, for lane line segmentation task.
+
+## Dataset
+
+
+
 ## Citation
 
 ```

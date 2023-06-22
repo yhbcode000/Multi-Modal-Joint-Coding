@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Apr  7 18:43:00 2020
+
+@author: kerui
+"""
+
 import os
 import os.path
 import glob
@@ -11,6 +18,8 @@ import torch.utils.data as data
 import cv2
 from dataloaders import transforms
 from dataloaders.pose_estimator import get_pose_pnp
+import skimage
+import collections
 
 input_options = ['d', 'rgb', 'rgbd', 'g', 'gd']
 
@@ -42,163 +51,135 @@ def load_calib():
 def get_paths_and_transform(split, args):
     assert (args.use_d or args.use_rgb
             or args.use_g), 'no proper input selected'
-
+            
     if split == "train":
         transform = train_transform
-        glob_d = os.path.join(
+        
+        # 1
+        glob_pc = os.path.join(
             args.data_folder,
             #'data_depth_velodyne/train/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
-            'data_depth_velodyne/train/2011_09_26_drive_0001_sync/proj_depth/velodyne_raw/image_02/*.png'
+            r'small_data\knn_pc\*.png'
         )
-        glob_gt = os.path.join(
+        
+        # 2、用于道路分割的label
+        glob_road_label = os.path.join(
             args.data_folder,
             #'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
-            'data_depth_annotated/train/2011_09_26_drive_0001_sync/proj_depth/groundtruth/image_02/*.png'
+            r'small_data\road_label\*.png'
         )
         
-        # TODO code refactor
+        # 3、用于车道线分割的label
+        glob_lane_label = os.path.join(
+            args.data_folder,
+            #'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
+            r'small_data\lane_label\*.png'
+        )
+        
+        # 4、
+        glob_rgb = os.path.join(
+                args.data_folder,
+                r'small_data\train_image_2_lane\*.png'
+            )
 
         def get_rgb_paths(p):
-            ps = p.split('/')
-            pnew = '/'.join(ps[:-7] +  
-                ['data_rgb']+ps[-6:-4]+ps[-2:-1]+['data']+ps[-1:])
-                
-            # print('-------------------2-------------------\n')
-            return pnew
-        
-        
-#         def get_rgb_paths(p):
-#             rgb_path = '../data/data_rgb/train/2011_09_26_drive_0001_sync/image_02/data/'
-        
-# #                 ps = p.split('\\')
-# # #            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
-# # #                            ps[-2:-1] + ['data'] + ps[-1:])
-        
-# #                 pnew = os.path.join(rgb_path, ps[-1])
-        
-# #             #print('-------------------1-------------------\n')/home/yanghaobo/Env/Informatics_Fusion/data/det_annotations
-#             return rgb_path
-        
-    elif split == "val":
-        if args.val == "full":
-            transform = val_transform
-            glob_d = os.path.join(
-                args.data_folder,
-                #'data_depth_velodyne/val/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
-                'data_depth_velodyne/train/2011_09_26_drive_0001_sync/proj_depth/velodyne_raw/image_02/*.png'
-            )
-            glob_gt = os.path.join(
-                args.data_folder,
-                #'data_depth_annotated/val/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
-                'data_depth_annotated/train/2011_09_26_drive_0001_sync/proj_depth/groundtruth/image_02/*.png'
-            )
+            rgb_path = '../data/data_rgb/train/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/image_02/data/'
             
-            def get_rgb_paths(p):
-                ps = p.split('/')
-                pnew = '/'.join(ps[:-7] +  
-                    ['data_rgb']+ps[-6:-4]+ps[-2:-1]+['data']+ps[-1:])
-                
-                # print('-------------------2-------------------\n')
-                return pnew
-            
-            
-#             def get_rgb_paths(p):
-#                 rgb_path = '../data/data_rgb/train/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/image_02/data/'
-            
-# #                 ps = p.split('\\')
-# # #            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
-# # #                            ps[-2:-1] + ['data'] + ps[-1:])
-            
-# #                 pnew = os.path.join(rgb_path, ps[-1])
-            
-# #             #print('-------------------1-------------------\n')/home/yanghaobo/Env/Informatics_Fusion/data/det_annotations
-#                 return rgb_path
-            
-            
-        elif args.val == "select":
-            transform = no_transform
-            glob_d = os.path.join(
-                args.data_folder,
-                #"depth_selection/val_selection_cropped/velodyne_raw/*.png"
-                'data_depth_velodyne/train/2011_09_26_drive_0001_sync/proj_depth/velodyne_raw/image_02/*.png'
-                )
-            glob_gt = os.path.join(
-                args.data_folder,
-                #"depth_selection/val_selection_cropped/groundtruth_depth/*.png"
-                'data_depth_annotated/train/2011_09_26_drive_0001_sync/proj_depth/groundtruth/image_02/*.png'
-            )
-#            def get_rgb_paths(p):
-#                #print('-------------------3-------------------\n')
-#                return p.replace("groundtruth_depth","image")
-            
-            
-            
-            def get_rgb_paths(p):
-                rgb_path = '../data/data_rgb/train/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/image_02/data/'
-            
-                ps = p.split('\\')
+            ps = p.split('\\')
 #            pnew = '/'.join([args.data_folder] + ['data_rgb'] + ps[-6:-4] +
 #                            ps[-2:-1] + ['data'] + ps[-1:])
             
-                pnew = os.path.join(rgb_path, ps[-1])
+            pnew = os.path.join(rgb_path, ps[-1])
             
             #print('-------------------1-------------------\n')
-                return pnew
-    elif split == "test_completion":
+            return pnew
+    elif split == "val":
+        if args.val == "select":
+            transform = no_transform
+            
+            # 1
+            glob_pc = os.path.join(
+                args.data_folder,
+                #'data_depth_velodyne/train/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
+                r'small_data\knn_pc\*.png'
+            )
+            
+            # 2、用于道路分割的label
+            glob_road_label = os.path.join(
+                args.data_folder,
+                #'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
+                r'small_data\road_label\*.png'
+            )
+            
+            # 3、用于车道线分割的label
+            glob_lane_label = os.path.join(
+                args.data_folder,
+                #'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
+                r'small_data\lane_label\*.png'
+            )
+            
+            # 4、
+            glob_rgb = os.path.join(
+                    args.data_folder,
+                    r'small_data\train_image_2_lane\*.png'
+                )       
+    
+    # 测试, 输入为点云强度和rgb
+    elif split == 'test_road_lane_segmentation':
         transform = no_transform
-        glob_d = os.path.join(
+        glob_pc = os.path.join(
             args.data_folder,
-            "depth_selection/test_depth_completion_anonymous/velodyne_raw/*.png"
+            'reflectance/*.png'
         )
-        glob_gt = None  #"test_depth_completion_anonymous/"
+        glob_road_label = None
+        glob_lane_label = None
         glob_rgb = os.path.join(
             args.data_folder,
-            "depth_selection/test_depth_completion_anonymous/image/*.png")
-    elif split == "test_prediction":
-        transform = no_transform
-        glob_d = None
-        glob_gt = None  #"test_depth_completion_anonymous/"
-        glob_rgb = os.path.join(
-            args.data_folder,
-            "depth_selection/test_depth_prediction_anonymous/image/*.png")
+            "train_image_2_lane/*.png")
+
     else:
         raise ValueError("Unrecognized split " + str(split))
 
-    if glob_gt is not None:
+    if glob_lane_label is not None:
         # train or val-full or val-select
-        paths_d = sorted(glob.glob(glob_d)) 
-        paths_gt = sorted(glob.glob(glob_gt)) 
-        paths_rgb = [get_rgb_paths(p) for p in paths_gt]
+        # 点云：原始+强度+高度
+        paths_pc = sorted(glob.glob(glob_pc)) 
+        paths_rgb = sorted(glob.glob(glob_rgb))
+        paths_road_label = sorted(glob.glob(glob_road_label))
+        paths_lane_label = sorted(glob.glob(glob_lane_label))
     else:  
         # test only has d or rgb
         paths_rgb = sorted(glob.glob(glob_rgb))
-        paths_gt = [None] * len(paths_rgb)
-        if split == "test_prediction":
-            paths_d = [None] * len(
-                paths_rgb)  # test_prediction has no sparse depth
-        else:
-            paths_d = sorted(glob.glob(glob_d))
+        paths_road_label = [None]*len(paths_rgb)
+        paths_lane_label = [None]*len(paths_rgb)
+        paths_pc = sorted(glob.glob(glob_pc))
+            
 
-    if len(paths_d) == 0 and len(paths_rgb) == 0 and len(paths_gt) == 0:
-        raise (RuntimeError("Found 0 images under {}".format(glob_gt)))
-    if len(paths_d) == 0 and args.use_d:
+    if len(paths_pc) == 0 and len(paths_rgb) == 0 and len(paths_lane_label) == 0 and len(paths_road_label) == 0:
+        raise (RuntimeError("Found 0 images under {}".format(paths_lane_label)))
+    if len(paths_pc) == 0 and args.use_d:
         raise (RuntimeError("Requested sparse depth but none was found"))
     if len(paths_rgb) == 0 and args.use_rgb:
         raise (RuntimeError("Requested rgb images but none was found"))
     if len(paths_rgb) == 0 and args.use_g:
         raise (RuntimeError("Requested gray images but no rgb was found"))
-    if len(paths_rgb) != len(paths_d) or len(paths_rgb) != len(paths_gt):
+    if len(paths_rgb) != len(paths_pc) or len(paths_rgb) != len(paths_lane_label):
         raise (RuntimeError("Produced different sizes for datasets"))
 
-    paths = {"rgb": paths_rgb, "d": paths_d, "gt": paths_gt}
+    paths = {"rgb": paths_rgb, "pc": paths_pc, "lane_label": paths_lane_label, "road_label": paths_road_label}
     return paths, transform
 
+#oheight, owidth = 352, 1216
 
-def rgb_read(filename):
+def rgb_read(filename, args):
     assert os.path.exists(filename), "file not found: {}".format(filename)
     img_file = Image.open(filename)
     
-    img_file = img_file.resize((240, 416))
+    #img_file = img_file.resize((400, 416))
+    #img_file = img_file.resize((args.image_height, args.image_width))
+    img_file = img_file.resize((args.image_width, args.image_height))
+    # 将读入的数据统一成该原始代码所使用的尺寸 oheight, owidth = 352, 1216
+    #img_file = img_file.resize((owidth, oheight))
     
     # rgb_png = np.array(img_file, dtype=float) / 255.0 # scale pixels to the range [0,1]
     rgb_png = np.array(img_file, dtype='uint8')  # in the range [0,255]
@@ -206,14 +187,18 @@ def rgb_read(filename):
     return rgb_png
 
 
-def depth_read(filename):
+def depth_read(filename, args):
     # loads depth map D from png file
     # and returns it as a numpy array,
     # for details see readme.txt
     assert os.path.exists(filename), "file not found: {}".format(filename)
     img_file = Image.open(filename)
     
-    img_file = img_file.resize((240, 416))
+    #img_file = img_file.resize((400, 416))
+    #img_file = img_file.resize((args.image_height, args.image_width))
+    img_file = img_file.resize((args.image_width, args.image_height))
+    # 将读入的数据统一成该原始代码所使用的尺寸 oheight, owidth = 352, 1216
+    #img_file = img_file.resize((owidth, oheight))
     
     depth_png = np.array(img_file, dtype=int)
     img_file.close()
@@ -227,6 +212,31 @@ def depth_read(filename):
     return depth
 
 
+def label_read(filename, args):
+    # loads depth map D from png file
+    # and returns it as a numpy array,
+    # for details see readme.txt
+    assert os.path.exists(filename), "file not found: {}".format(filename)
+    img_file = Image.open(filename)
+    
+    #img_file = img_file.resize((400, 416))
+    #img_file = img_file.resize((args.image_height, args.image_width))
+    img_file = img_file.resize((args.image_width, args.image_height))
+    # 将读入的数据统一成该原始代码所使用的尺寸 oheight, owidth = 352, 1216
+    #img_file = img_file.resize((owidth, oheight))
+    
+    label_png = np.array(img_file, dtype=int)
+    img_file.close()
+    # make sure we have a proper 16bit depth map here.. not 8bit!
+    assert np.max(label_png) < 2, \
+        "np.max(label_png)={}, path={}".format(np.max(label_png),filename)
+
+    label = label_png.astype(np.float)
+    # depth[depth_png == 0] = -1.
+    #label = np.expand_dims(label, -1)
+    return label
+
+
 oheight, owidth = 352, 1216
 
 
@@ -235,8 +245,7 @@ def drop_depth_measurements(depth, prob_keep):
     depth *= mask
     return depth
 
-
-def train_transform(rgb, sparse, target, rgb_near, args):
+def train_transform(rgb, sparse, target, segmentation_label, args):
     # s = np.random.uniform(1.0, 1.5) # random scaling
     # angle = np.random.uniform(-5.0, 5.0) # random rotation degrees
     do_flip = np.random.uniform(0.0, 1.0) < 0.5  # random horizontal flip
@@ -244,12 +253,17 @@ def train_transform(rgb, sparse, target, rgb_near, args):
     transform_geometric = transforms.Compose([
         # transforms.Rotate(angle),
         # transforms.Resize(s),
-        transforms.BottomCrop((oheight, owidth)),
+        # 将读入的数据统一改成原始代码所使用的尺寸 oheight, owidth = 352, 1216
+        #transforms.BottomCrop((oheight, owidth)),
+        #transforms.BottomCrop((args.image_height, args.image_width)),
+        #Resize((args.image_height, args.image_width)),
+        
         transforms.HorizontalFlip(do_flip)
     ])
     if sparse is not None:
         sparse = transform_geometric(sparse)
     target = transform_geometric(target)
+    segmentation_label = transform_geometric(segmentation_label)
     if rgb is not None:
         brightness = np.random.uniform(max(0, 1 - args.jitter),
                                        1 + args.jitter)
@@ -261,16 +275,18 @@ def train_transform(rgb, sparse, target, rgb_near, args):
             transform_geometric
         ])
         rgb = transform_rgb(rgb)
-        if rgb_near is not None:
-            rgb_near = transform_rgb(rgb_near)
     # sparse = drop_depth_measurements(sparse, 0.9)
 
-    return rgb, sparse, target, rgb_near
+    return rgb, sparse, target, segmentation_label
 
 
-def val_transform(rgb, sparse, target, rgb_near, args):
+def val_transform(rgb, sparse, target, segmentation_label, args):
     transform = transforms.Compose([
-        transforms.BottomCrop((oheight, owidth)),
+        #transforms.BottomCrop((oheight, owidth)),
+        #transforms.BottomCrop((args.image_height, args.image_width)),
+        # 将读入的数据统一改成原始代码所使用的尺寸 oheight, owidth = 352, 1216
+        #transforms.BottomCrop((oheight, owidth)),
+        #Resize((args.image_height, args.image_width)),
     ])
     if rgb is not None:
         rgb = transform(rgb)
@@ -278,13 +294,14 @@ def val_transform(rgb, sparse, target, rgb_near, args):
         sparse = transform(sparse)
     if target is not None:
         target = transform(target)
-    if rgb_near is not None:
-        rgb_near = transform(rgb_near)
-    return rgb, sparse, target, rgb_near
+        
+    if segmentation_label is not None:
+        segmentation_label = transform(segmentation_label)
+    return rgb, sparse, target, segmentation_label
 
 
-def no_transform(rgb, sparse, target, rgb_near, args):
-    return rgb, sparse, target, rgb_near
+def no_transform(rgb, sparse, target, segmentation_label, args):
+    return rgb, sparse, target, segmentation_label
 
 
 to_tensor = transforms.ToTensor()
@@ -305,39 +322,6 @@ def handle_gray(rgb, args):
             rgb_ret = rgb
         return rgb_ret, img
 
-
-def get_rgb_near(path, args):
-    assert path is not None, "path is None"
-
-    def extract_frame_id(filename):
-        head, tail = os.path.split(filename)
-        number_string = tail[0:tail.find('.')]
-        number = int(number_string)
-        return head, number
-
-    def get_nearby_filename(filename, new_id):
-        head, _ = os.path.split(filename)
-        new_filename = os.path.join(head, '%010d.png' % new_id)
-        return new_filename
-
-    head, number = extract_frame_id(path)
-    count = 0
-    max_frame_diff = 3
-    candidates = [
-        i - max_frame_diff for i in range(max_frame_diff * 2 + 1)
-        if i - max_frame_diff != 0
-    ]
-    while True:
-        random_offset = choice(candidates)
-        path_near = get_nearby_filename(path, number + random_offset)
-        if os.path.exists(path_near):
-            break
-        assert count < 20, "cannot find a nearby frame in 20 trials for {}".format(
-            path_rgb_tgt)
-
-    return rgb_read(path_near)
-
-
 class KittiDepth(data.Dataset):
     """A data loader for the Kitti dataset
     """
@@ -351,36 +335,33 @@ class KittiDepth(data.Dataset):
         self.threshold_translation = 0.1
 
     def __getraw__(self, index):
-        rgb = rgb_read(self.paths['rgb'][index]) if \
+        # rgb图像
+        rgb = rgb_read(self.paths['rgb'][index], self.args) if \
             (self.paths['rgb'][index] is not None and (self.args.use_rgb or self.args.use_g)) else None
-        sparse = depth_read(self.paths['d'][index]) if \
-            (self.paths['d'][index] is not None and self.args.use_d) else None
-        target = depth_read(self.paths['gt'][index]) if \
-            self.paths['gt'][index] is not None else None
-        rgb_near = get_rgb_near(self.paths['rgb'][index], self.args) if \
-            self.split == 'train' and self.args.use_pose else None
-        return rgb, sparse, target, rgb_near
+        
+        # 点云：原始+强度+高度
+        point_cloud = rgb_read(self.paths['pc'][index], self.args) if \
+            (self.paths['pc'][index] is not None and self.args.use_d) else None
+            
+        # 车道标签
+        road_label = label_read(self.paths['road_label'][index], self.args) if \
+            self.paths['road_label'][index] is not None else None
+            
+        # 车道线标签
+        lane_label = label_read(self.paths['lane_label'][index], self.args) if \
+            self.paths['lane_label'][index] is not None else None
+        
+        return rgb, point_cloud, road_label, lane_label
 
     def __getitem__(self, index):
-        rgb, sparse, target, rgb_near = self.__getraw__(index)
-        rgb, sparse, target, rgb_near = self.transform(rgb, sparse, target,
-                                                       rgb_near, self.args)
-        r_mat, t_vec = None, None
-        if self.split == 'train' and self.args.use_pose:
-            success, r_vec, t_vec = get_pose_pnp(rgb, rgb_near, sparse, self.K)
-            # discard if translation is too small
-            success = success and LA.norm(t_vec) > self.threshold_translation
-            if success:
-                r_mat, _ = cv2.Rodrigues(r_vec)
-            else:
-                # return the same image and no motion when PnP fails
-                rgb_near = rgb
-                t_vec = np.zeros((3, 1))
-                r_mat = np.eye(3)
+        rgb, point_cloud, road_label, lane_label = self.__getraw__(index)
+        rgb, point_cloud, road_label, lane_label = self.transform(rgb, point_cloud, road_label,lane_label
+                                                       ,self.args)
 
         rgb, gray = handle_gray(rgb, self.args)
-        candidates = {"rgb":rgb, "d":sparse, "gt":target, \
-            "g":gray, "r_mat":r_mat, "t_vec":t_vec, "rgb_near":rgb_near}
+        #gray = None
+        candidates = {"rgb":rgb, "pc":point_cloud, "road_label":road_label, "lane_label":lane_label ,\
+            "g":gray}
         items = {
             key: to_float_tensor(val)
             for key, val in candidates.items() if val is not None
@@ -389,4 +370,4 @@ class KittiDepth(data.Dataset):
         return items
 
     def __len__(self):
-        return len(self.paths['gt'])
+        return len(self.paths['road_label'])
