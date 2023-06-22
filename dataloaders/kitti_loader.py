@@ -59,27 +59,27 @@ def get_paths_and_transform(split, args):
         glob_pc = os.path.join(
             args.data_folder,
             #'data_depth_velodyne/train/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
-            r'small_data\knn_pc\*.png'
+            r'data/data_road_velodyne/training/velodyne/*.png'
         )
         
         # 2、用于道路分割的label
         glob_road_label = os.path.join(
             args.data_folder,
             #'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
-            r'small_data\road_label\*.png'
+            r'data_road/training/label_road_image_2/*.png'
         )
         
         # 3、用于车道线分割的label
         glob_lane_label = os.path.join(
             args.data_folder,
             #'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
-            r'small_data\lane_label\*.png'
+            r'data_road/training/label_lane_image_2/*.png'
         )
         
         # 4、
         glob_rgb = os.path.join(
                 args.data_folder,
-                r'small_data\train_image_2_lane\*.png'
+                r'data/data_road_right/training/image_3*.png'
             )
 
         def get_rgb_paths(p):
@@ -101,21 +101,21 @@ def get_paths_and_transform(split, args):
             glob_pc = os.path.join(
                 args.data_folder,
                 #'data_depth_velodyne/train/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png'
-                r'small_data\knn_pc\*.png'
+                r'data_road_velodyne/training/velodyne/*.png'
             )
             
             # 2、用于道路分割的label
             glob_road_label = os.path.join(
                 args.data_folder,
                 #'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
-                r'small_data\road_label\*.png'
+                r'data_road/training/label_road_image_2/*.png'
             )
             
             # 3、用于车道线分割的label
             glob_lane_label = os.path.join(
                 args.data_folder,
                 #'data_depth_annotated/train/*_sync/proj_depth/groundtruth/image_0[2,3]/*.png'
-                r'small_data\lane_label\*.png'
+                r'data_road/training/label_lane_image_2/*.png'
             )
             
             # 4、
@@ -124,18 +124,18 @@ def get_paths_and_transform(split, args):
                     r'small_data\train_image_2_lane\*.png'
                 )       
     
-    # 测试, 输入为点云强度和rgb
-    elif split == 'test_road_lane_segmentation':
-        transform = no_transform
-        glob_pc = os.path.join(
-            args.data_folder,
-            'reflectance/*.png'
-        )
-        glob_road_label = None
-        glob_lane_label = None
-        glob_rgb = os.path.join(
-            args.data_folder,
-            "train_image_2_lane/*.png")
+    # # 测试, 输入为点云强度和rgb TODO
+    # elif split == 'test_road_lane_segmentation':
+    #     transform = no_transform
+    #     glob_pc = os.path.join(
+    #         args.data_folder,
+    #         'reflectance/*.png'
+    #     )
+    #     glob_road_label = None
+    #     glob_lane_label = None
+    #     glob_rgb = os.path.join(
+    #         args.data_folder,
+    #         "train_image_2_lane/*.png")
 
     else:
         raise ValueError("Unrecognized split " + str(split))
